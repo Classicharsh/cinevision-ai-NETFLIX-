@@ -26,6 +26,7 @@ if os.path.exists(css_path):
 from src.dashboard import load_data, render_kpi_cards, render_insights_panel
 from src.filters import render_sidebar_filters, filter_data
 from src.charts import plot_type_pie, plot_top_countries, plot_top_ratings, plot_top_genres, plot_growth_timeline
+from src.recommender import build_similarity_matrix, get_recommendations
 
 # 3. Load dataset
 data_path = os.path.join(os.path.dirname(__file__), 'data', 'datanetflix_titles.csv')
@@ -35,6 +36,13 @@ if not os.path.exists(data_path):
 
 # Load full dataset
 df = load_data(data_path)
+
+# Cache similarity matrix computation
+@st.cache_resource
+def load_similarity_matrix(_df):
+    return build_similarity_matrix(_df)
+
+cosine_sim = load_similarity_matrix(df)
 
 # 4. Render Sidebar Header
 st.sidebar.markdown("""
@@ -97,6 +105,53 @@ c5, = st.columns(1)
 with c5:
     fig_growth = plot_growth_timeline(filtered_df)
     st.plotly_chart(fig_growth, use_container_width=True)
+
+st.markdown("<hr style='border: none; border-top: 1px solid #141414; margin: 30px 0;' />", unsafe_allow_html=True)
+
+# 8.5 AI Recommendation Engine
+st.markdown("### 🤖 AI Recommendation Engine")
+st.markdown("<p style='color: #808080; font-size: 14px; margin-top: -10px;'>Select any title from the Netflix catalog to discover 5 highly relevant recommendations powered by TF-IDF and Cosine Similarity.</p>", unsafe_allow_html=True)
+
+all_titles = sorted(df['title'].unique())
+selected_title = st.selectbox(
+    "Choose a Movie or TV Show:",
+    options=all_titles,
+    key="recommendation_select"
+)
+
+if st.button("Get Recommendations", key="recommendation_btn"):
+    recommendations_df = get_recommendations(selected_title, df, cosine_sim, top_n=5)
+    
+    if not recommendations_df.empty:
+        rec_cols = st.columns(5)
+        for i, (_, rec_row) in enumerate(recommendations_df.iterrows()):
+            if i >= 5:
+                break
+            
+            rec_title = rec_row.get('title', 'Unknown')
+            rec_type = rec_row.get('type', 'Unknown')
+            rec_country = rec_row.get('country', 'Unknown')
+            rec_rating = rec_row.get('rating', 'Unknown')
+            rec_listed_in = rec_row.get('listed_in', 'Unknown')
+            rec_desc = rec_row.get('description', 'No description available.')
+            
+            with rec_cols[i]:
+                st.markdown(f"""
+                <div class="rec-card">
+                    <div class="rec-title" title="{rec_title}">{rec_title}</div>
+                    <div class="rec-badge-row">
+                        <span class="rec-badge rec-badge-type">{rec_type}</span>
+                        <span class="rec-badge rec-badge-rating">{rec_rating}</span>
+                    </div>
+                    <div class="rec-meta" title="{rec_country} • {rec_listed_in}">
+                        🌍 {rec_country}<br>
+                        🎭 {rec_listed_in}
+                    </div>
+                    <div class="rec-desc" title="{rec_desc}">{rec_desc}</div>
+                </div>
+                """, unsafe_allow_html=True)
+    else:
+        st.warning("Could not find recommendations for this title.")
 
 st.markdown("<hr style='border: none; border-top: 1px solid #141414; margin: 30px 0;' />", unsafe_allow_html=True)
 
