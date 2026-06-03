@@ -111,3 +111,84 @@ def plot_top_ratings(df: pd.DataFrame):
         marker_line_width=1
     )
     return fig
+
+def plot_top_genres(df: pd.DataFrame):
+    """
+    Renders a horizontal bar chart of the Top 10 Genres.
+    """
+    genre_list = []
+    for val in df['listed_in'].dropna():
+        for g in val.split(','):
+            g_clean = g.strip()
+            if g_clean:
+                genre_list.append(g_clean)
+                
+    counts = Counter(genre_list)
+    top_10 = pd.DataFrame(counts.most_common(10), columns=['Genre', 'Titles Count'])
+    
+    # Sort for horizontal bar chart (largest at top)
+    top_10 = top_10.sort_values(by='Titles Count', ascending=True)
+    
+    fig = px.bar(
+        top_10,
+        x='Titles Count',
+        y='Genre',
+        orientation='h',
+        color_discrete_sequence=['#E50914']
+    )
+    
+    fig = apply_luxury_layout(fig, "🎭 Top 10 Genres")
+    fig.update_layout(
+        height=350,
+        xaxis=dict(showgrid=True, gridcolor='#222222', title="Total Titles"),
+        yaxis=dict(showgrid=False, title="")
+    )
+    fig.update_traces(marker_line_color='#000000', marker_line_width=1)
+    return fig
+
+def plot_growth_timeline(df: pd.DataFrame):
+    """
+    Renders a line chart showing catalog growth over release years.
+    """
+    counts = df['release_year'].value_counts().sort_index()
+    timeline_df = pd.DataFrame({'Year': counts.index, 'Titles Count': counts.values})
+    
+    fig = px.line(
+        timeline_df,
+        x='Year',
+        y='Titles Count',
+        color_discrete_sequence=['#E50914']
+    )
+    
+    # Apply premium line and marker configurations
+    fig.update_traces(
+        line=dict(width=3, color='#E50914'),
+        mode='lines+markers',
+        marker=dict(size=6, color='#E50914', line=dict(width=1, color='#FFFFFF')),
+        hovertemplate="<b>Year %{x}</b><br>Titles: %{y}<extra></extra>"
+    )
+    
+    # Area fill under the line for a premium glow/area effect
+    fig.update_traces(
+        fill='tozeroy',
+        fillcolor='rgba(229, 9, 20, 0.1)'
+    )
+    
+    fig = apply_luxury_layout(fig, "🕒 Content Growth Timeline")
+    
+    # Determine step spacing for year labels based on dynamic range
+    year_range_span = timeline_df['Year'].max() - timeline_df['Year'].min() if not timeline_df.empty else 0
+    dtick_val = 5 if year_range_span > 20 else 1
+    
+    fig.update_layout(
+        height=350,
+        xaxis=dict(
+            showgrid=True, 
+            gridcolor='#222222', 
+            title="Release Year",
+            dtick=dtick_val
+        ),
+        yaxis=dict(showgrid=True, gridcolor='#222222', title="Titles Count")
+    )
+    return fig
+

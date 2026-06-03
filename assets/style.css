@@ -90,3 +90,41 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover {
     background: #E50914;
 }
+
+/* Day 3 Insights Panel Styling */
+.insight-card {
+    background-color: #141414 !important;
+    border: 1px solid #222222 !important;
+    border-top: 3px solid #E50914 !important; /* Netflix red accent border on top */
+    border-radius: 6px !important;
+    padding: 15px !important;
+    text-align: center !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    margin-bottom: 15px;
+}
+
+.insight-card:hover {
+    transform: translateY(-2px) !important;
+    border-color: #E50914 !important;
+    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.15) !important;
+}
+
+.insight-label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #808080 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    margin-bottom: 6px;
+}
+
+.insight-val {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #FFFFFF !important;
+    font-family: 'Outfit', sans-serif !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+

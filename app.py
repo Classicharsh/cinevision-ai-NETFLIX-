@@ -23,9 +23,9 @@ if os.path.exists(css_path):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Import modular components
-from src.dashboard import load_data, render_kpi_cards
+from src.dashboard import load_data, render_kpi_cards, render_insights_panel
 from src.filters import render_sidebar_filters, filter_data
-from src.charts import plot_type_pie, plot_top_countries, plot_top_ratings
+from src.charts import plot_type_pie, plot_top_countries, plot_top_ratings, plot_top_genres, plot_growth_timeline
 
 # 3. Load dataset
 data_path = os.path.join(os.path.dirname(__file__), 'data', 'datanetflix_titles.csv')
@@ -64,32 +64,76 @@ render_kpi_cards(filtered_df)
 
 st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
-# 8. Render Visualizations Layout
-c1, c2 = st.columns([4, 6])
+# Render Auto Insights Panel
+render_insights_panel(filtered_df)
 
+st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+
+# 8. Render Visualizations Layout
+# Row 1: Composition (40%) and Top Countries (60%)
+c1, c2 = st.columns([4, 6])
 with c1:
     fig_pie = plot_type_pie(filtered_df)
     st.plotly_chart(fig_pie, use_container_width=True)
-
 with c2:
     fig_countries = plot_top_countries(filtered_df)
     st.plotly_chart(fig_countries, use_container_width=True)
 
-st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
-c3, = st.columns(1)
+# Row 2: Top Genres (60%) and Top Ratings (40%)
+c3, c4 = st.columns([6, 4])
 with c3:
+    fig_genres = plot_top_genres(filtered_df)
+    st.plotly_chart(fig_genres, use_container_width=True)
+with c4:
     fig_ratings = plot_top_ratings(filtered_df)
     st.plotly_chart(fig_ratings, use_container_width=True)
 
+st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+
+# Row 3: Growth Timeline (100%)
+c5, = st.columns(1)
+with c5:
+    fig_growth = plot_growth_timeline(filtered_df)
+    st.plotly_chart(fig_growth, use_container_width=True)
+
 st.markdown("<hr style='border: none; border-top: 1px solid #141414; margin: 30px 0;' />", unsafe_allow_html=True)
 
-# 9. Filtered Dataset Preview Table
-st.markdown("### 🍿 Catalog Dataset Preview")
-st.markdown(f"<p style='color: #808080; font-size: 13px; margin-top: -10px;'>Showing first 10 entries out of {len(filtered_df):,} filtered results.</p>", unsafe_allow_html=True)
+# 9. Search Engine & Preview Table
+st.markdown("### 🍿 Search & Explore Catalog")
+search_query = st.text_input(
+    "Search catalog by title, director, cast, country, or genre:",
+    placeholder="e.g. Stranger Things, Christopher Nolan, Cillian Murphy, France, Sci-Fi...",
+    key="catalog_search"
+)
+
+# Apply search filter within current filtered selection
+if search_query:
+    keywords = [kw.strip().lower() for kw in search_query.split() if kw.strip()]
+    if keywords:
+        import pandas as pd
+        mask = pd.Series(True, index=filtered_df.index)
+        for kw in keywords:
+            kw_mask = (
+                filtered_df['title'].str.lower().str.contains(kw, na=False) |
+                filtered_df['director'].str.lower().str.contains(kw, na=False) |
+                filtered_df['cast'].str.lower().str.contains(kw, na=False) |
+                filtered_df['country'].str.lower().str.contains(kw, na=False) |
+                filtered_df['listed_in'].str.lower().str.contains(kw, na=False)
+            )
+            mask = mask & kw_mask
+        search_results = filtered_df[mask]
+    else:
+        search_results = filtered_df
+    st.markdown(f"<p style='color: #E50914; font-size: 14px; font-weight: 600; margin-top: -10px;'>Found {len(search_results):,} matching results.</p>", unsafe_allow_html=True)
+else:
+    search_results = filtered_df
+    st.markdown(f"<p style='color: #808080; font-size: 13px; margin-top: -10px;'>Showing first 10 entries out of {len(filtered_df):,} filtered results.</p>", unsafe_allow_html=True)
 
 # Clean columns for display
 display_cols = ['title', 'type', 'director', 'cast', 'country', 'release_year', 'rating', 'duration', 'listed_in']
-display_df = filtered_df[display_cols].head(10)
-
-st.dataframe(display_df, use_container_width=True)
+if search_query:
+    st.dataframe(search_results[display_cols], use_container_width=True)
+else:
+    st.dataframe(search_results[display_cols].head(10), use_container_width=True)
