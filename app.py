@@ -23,10 +23,13 @@ if os.path.exists(css_path):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Import modular components
-from src.dashboard import load_data, render_kpi_cards, render_insights_panel
+from src.dashboard import load_data, render_kpi_cards
 from src.filters import render_sidebar_filters, filter_data
 from src.charts import plot_type_pie, plot_top_countries, plot_top_ratings, plot_top_genres, plot_growth_timeline
 from src.recommender import build_similarity_matrix, get_recommendations
+from src.geo_analytics import plot_geo_map
+from src.insights import render_enhanced_insights, generate_insights
+from src.report_generator import generate_pdf_report
 
 # 3. Load dataset
 data_path = os.path.join(os.path.dirname(__file__), 'data', 'datanetflix_titles.csv')
@@ -59,6 +62,29 @@ content_type, selected_country, selected_rating, year_range = render_sidebar_fil
 # Apply filtering logic
 filtered_df = filter_data(df, content_type, selected_country, selected_rating, year_range)
 
+# 5.5 Render Sidebar PDF Export
+st.sidebar.markdown("<hr style='margin: 15px 0; border: none; border-top: 1px solid #141414;' />", unsafe_allow_html=True)
+st.sidebar.markdown("<h4 style='color: #FFFFFF; font-family: \"Outfit\", sans-serif; margin-bottom: 10px;'>📊 Export Reports</h4>", unsafe_allow_html=True)
+
+# Generate PDF report dynamically based on current filtered dataframe
+insights_list, strategic_rec = generate_insights(filtered_df)
+pdf_output_path = os.path.join(os.path.dirname(__file__), "reports", "executive_report.pdf")
+
+try:
+    generate_pdf_report(filtered_df, insights_list, strategic_rec, pdf_output_path)
+    if os.path.exists(pdf_output_path):
+        with open(pdf_output_path, "rb") as pdf_file:
+            pdf_bytes = pdf_file.read()
+        st.sidebar.download_button(
+            label="📥 Download Executive PDF Report",
+            data=pdf_bytes,
+            file_name="CineVision_AI_Executive_Report.pdf",
+            mime="application/pdf",
+            key="download_pdf_report"
+        )
+except Exception as e:
+    st.sidebar.error(f"Error compiling report: {str(e)}")
+
 # 6. Render Dashboard Header
 st.markdown("""
 <div style="padding: 10px 0 20px 0;">
@@ -72,8 +98,15 @@ render_kpi_cards(filtered_df)
 
 st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
-# Render Auto Insights Panel
-render_insights_panel(filtered_df)
+# Render Enhanced AI Insights Panel
+render_enhanced_insights(filtered_df)
+
+st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+
+# 7.5 Global Netflix Content Map
+st.markdown("### 🌍 Global Netflix Content Map")
+fig_map = plot_geo_map(filtered_df)
+st.plotly_chart(fig_map, use_container_width=True)
 
 st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
