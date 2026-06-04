@@ -195,11 +195,14 @@ streamlit run app.py
 
 ---
 
-## ✍️ Author & Contact
+## 👨‍💻 Author
 
-Developed with 💖 for the entertainment analytics community.
+- **Author:** Harshit Prajapati
+- **GitHub:** [@Classicharsh](https://github.com/Classicharsh)
+- **LinkedIn:** [Harshit Prajapati](https://www.linkedin.com/in/harshit-prajapati/)
+- **Portfolio:** https://www.harshitprajapati.me
+- **Email:** prajapatiharshit130@gmail.com
 
-- **Author**: Your Name
-- **GitHub**: [@yourusername](https://github.com/your-username)
-- **LinkedIn**: [Your Profile](https://linkedin.com/in/yourprofile)
-- **Email**: your.email@example.com
+---
+
+Developed with ❤️ by Harshit Prajapati
